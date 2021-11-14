@@ -4,16 +4,37 @@ using UnityEngine;
 
 public class PlayerMove : MonoBehaviour
 {
-    private CharacterController ch;
+    private Rigidbody rb;
     public float speed;
-    public bool jump;
+    private GameManager gm;
+    private AudioSource PickUpSound;
 
     private void Start()
     {
-        ch = GetComponent<CharacterController>();
+        PickUpSound = GetComponent<AudioSource>();
+        rb = GetComponent<Rigidbody>();
+        gm = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameManager>();
     }
-    private void Update()
+    private void FixedUpdate()
     {
-        ch.Move(transform.forward * speed * Time.deltaTime);
+        if (GameManager.GameStarted)
+            rb.MovePosition(transform.position + transform.forward * speed * Time.fixedDeltaTime);
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("EndPos"))
+        {
+            if (gm.CurrentLvlNumber == PlayerPrefs.GetInt("CountUnlockedLvls"))
+                PlayerPrefs.SetInt("CountUnlockedLvls", PlayerPrefs.GetInt("CountUnlockedLvls") + 1);
+            gm.nextLvl();
+        }
+        else if (other.CompareTag("Crystal"))
+        {
+            if(PlayerPrefs.GetString("Music") != "Off")
+                PickUpSound.Play();
+            PlayerPrefs.SetInt("Crystals", PlayerPrefs.GetInt("Crystals") + 1);
+            Destroy(other.gameObject);
+        }
+        gm.UpdateGameCanvas();
     }
 }
